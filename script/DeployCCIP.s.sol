@@ -45,13 +45,7 @@ contract DeploySoneiumCCIP is Script {
 
         // 2. Deploy NLPCCIPAdapter
         console.log("\n2. Deploying NLPCCIPAdapter...");
-        NLPCCIPAdapter adapter = new NLPCCIPAdapter(
-            nlpToken,
-            address(minterBurner),
-            ccipRouter,
-            linkToken,
-            deployer
-        );
+        NLPCCIPAdapter adapter = new NLPCCIPAdapter(nlpToken, address(minterBurner), ccipRouter, linkToken, deployer);
         console.log("NLPCCIPAdapter deployed at:", address(adapter));
 
         // 3. Authorize adapter in MinterBurner
@@ -79,7 +73,7 @@ contract DeployPolygonCCIP is Script {
         address ccipRouter = vm.envAddress("POLYGON_CCIP_ROUTER");
         address linkToken = vm.envAddress("POLYGON_LINK_TOKEN");
         address deployer = vm.addr(deployerPrivateKey);
-        uint256 vaultMinBalance = vm.envOr("VAULT_MIN_BALANCE", uint256(100000 * 10**18)); // 100k JPYC default
+        uint256 vaultMinBalance = vm.envOr("VAULT_MIN_BALANCE", uint256(100000 * 10 ** 18)); // 100k JPYC default
 
         console.log("Deploying CCIP contracts on Polygon...");
         console.log("Deployer:", deployer);
@@ -96,13 +90,8 @@ contract DeployPolygonCCIP is Script {
 
         // 2. Deploy NLPCCIPJPYCReceiver
         console.log("\n2. Deploying NLPCCIPJPYCReceiver...");
-        NLPCCIPJPYCReceiver receiver = new NLPCCIPJPYCReceiver(
-            jpycToken,
-            address(vault),
-            ccipRouter,
-            linkToken,
-            deployer
-        );
+        NLPCCIPJPYCReceiver receiver =
+            new NLPCCIPJPYCReceiver(jpycToken, address(vault), ccipRouter, linkToken, deployer);
         console.log("NLPCCIPJPYCReceiver deployed at:", address(receiver));
 
         // 3. Grant EXCHANGE_ROLE to receiver
