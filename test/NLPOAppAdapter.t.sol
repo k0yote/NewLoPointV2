@@ -50,15 +50,9 @@ contract MockNLPToken {
         return true;
     }
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
         require(block.timestamp <= deadline, "Permit expired");
         allowance[owner][spender] = value;
         nonces[owner]++;
@@ -86,17 +80,11 @@ contract MockLZEndpoint {
         delegates[msg.sender] = _delegate;
     }
 
-    function send(
-        MessagingParams calldata,
-        address
-    ) external payable returns (MessagingReceipt memory) {
+    function send(MessagingParams calldata, address) external payable returns (MessagingReceipt memory) {
         return MessagingReceipt({guid: bytes32(0), nonce: 0, fee: MessagingFee(msg.value, 0)});
     }
 
-    function quote(
-        MessagingParams calldata,
-        address
-    ) external pure returns (MessagingFee memory) {
+    function quote(MessagingParams calldata, address) external pure returns (MessagingFee memory) {
         return MessagingFee(0.01 ether, 0);
     }
 }
@@ -126,12 +114,7 @@ contract NLPOAppAdapterTest is Test {
 
         // Deploy real contracts
         minterBurner = new NLPMinterBurner(address(nlpToken), owner);
-        adapter = new NLPOAppAdapter(
-            address(nlpToken),
-            address(minterBurner),
-            address(lzEndpoint),
-            owner
-        );
+        adapter = new NLPOAppAdapter(address(nlpToken), address(minterBurner), address(lzEndpoint), owner);
 
         // Setup
         minterBurner.setOperator(address(adapter), true);
@@ -159,12 +142,7 @@ contract NLPOAppAdapterTest is Test {
         vm.expectEmit(true, true, false, true);
         emit NLPLocked(user, sendAmount, POLYGON_EID);
 
-        adapter.send{value: 0.01 ether}(
-            POLYGON_EID,
-            recipient,
-            sendAmount,
-            ""
-        );
+        adapter.send{value: 0.01 ether}(POLYGON_EID, recipient, sendAmount, "");
 
         // Check locked balance
         assertEq(adapter.lockedBalances(user), sendAmount);

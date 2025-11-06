@@ -46,8 +46,8 @@ contract NLPOAppJPYCReceiver is OApp, ReentrancyGuard {
      * @notice Message type identifier
      */
     enum MessageType {
-        REQUEST,    // Chain A -> Chain B: Request JPYC exchange
-        RESPONSE    // Chain B -> Chain A: Result of JPYC exchange
+        REQUEST, // Chain A -> Chain B: Request JPYC exchange
+        RESPONSE // Chain B -> Chain A: Result of JPYC exchange
     }
 
     /**
@@ -138,12 +138,10 @@ contract NLPOAppJPYCReceiver is OApp, ReentrancyGuard {
      * @param _endpoint Address of LayerZero Endpoint V2 on destination chain
      * @param _owner Address that will have owner privileges
      */
-    constructor(
-        address _jpycToken,
-        address _jpycVault,
-        address _endpoint,
-        address _owner
-    ) OApp(_endpoint, _owner) Ownable(_owner) {
+    constructor(address _jpycToken, address _jpycVault, address _endpoint, address _owner)
+        OApp(_endpoint, _owner)
+        Ownable(_owner)
+    {
         if (_jpycToken == address(0)) revert InvalidAddress();
         if (_jpycVault == address(0)) revert InvalidAddress();
 
@@ -219,17 +217,10 @@ contract NLPOAppJPYCReceiver is OApp, ReentrancyGuard {
      * @param _amount NLP amount
      * @param _success Whether JPYC transfer succeeded
      */
-    function _sendResponse(
-        uint32 _srcEid,
-        address _user,
-        uint256 _amount,
-        bool _success
-    ) internal {
+    function _sendResponse(uint32 _srcEid, address _user, uint256 _amount, bool _success) internal {
         // Build response message
-        bytes memory message = abi.encode(
-            MessageType.RESPONSE,
-            ResponseMessage({user: _user, amount: _amount, success: _success})
-        );
+        bytes memory message =
+            abi.encode(MessageType.RESPONSE, ResponseMessage({user: _user, amount: _amount, success: _success}));
 
         bytes memory options = _buildOptions();
 

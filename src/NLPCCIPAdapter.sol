@@ -48,8 +48,8 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @notice Message type identifier
      */
     enum MessageType {
-        REQUEST,    // Chain A -> Chain B: Request JPYC exchange
-        RESPONSE    // Chain B -> Chain A: Result of JPYC exchange
+        REQUEST, // Chain A -> Chain B: Request JPYC exchange
+        RESPONSE // Chain B -> Chain A: Result of JPYC exchange
     }
 
     /**
@@ -158,13 +158,10 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _linkToken LINK token address on source chain
      * @param _owner Address that will have owner privileges
      */
-    constructor(
-        address _nlpToken,
-        address _minterBurner,
-        address _ccipRouter,
-        address _linkToken,
-        address _owner
-    ) CCIPReceiver(_ccipRouter) Ownable(_owner) {
+    constructor(address _nlpToken, address _minterBurner, address _ccipRouter, address _linkToken, address _owner)
+        CCIPReceiver(_ccipRouter)
+        Ownable(_owner)
+    {
         if (_nlpToken == address(0)) revert InvalidAddress();
         if (_minterBurner == address(0)) revert InvalidAddress();
         if (_ccipRouter == address(0)) revert InvalidAddress();
@@ -212,8 +209,9 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
 
         // Execute permit to approve this contract
         try nlpToken.permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s) {
-            // Permit successful
-        } catch {
+        // Permit successful
+        }
+        catch {
             revert PermitFailed();
         }
 
@@ -225,9 +223,7 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
 
         // Build CCIP message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-            MessageType.REQUEST,
-            abi.encode(GiftMessage({recipient: _recipient, amount: _amount})),
-            _payInLink
+            MessageType.REQUEST, abi.encode(GiftMessage({recipient: _recipient, amount: _amount})), _payInLink
         );
 
         // Get the fee required to send the message
@@ -270,11 +266,12 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _payInLink Whether to pay CCIP fees in LINK (true) or native (false)
      * @return messageId CCIP message ID
      */
-    function send(
-        address _recipient,
-        uint256 _amount,
-        bool _payInLink
-    ) external payable nonReentrant returns (bytes32 messageId) {
+    function send(address _recipient, uint256 _amount, bool _payInLink)
+        external
+        payable
+        nonReentrant
+        returns (bytes32 messageId)
+    {
         if (_amount == 0) revert InvalidAmount();
         if (_recipient == address(0)) revert InvalidAddress();
         if (destinationChainSelector == 0 || destinationReceiver == address(0)) {
@@ -289,9 +286,7 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
 
         // Build CCIP message
         Client.EVM2AnyMessage memory evm2AnyMessage = _buildCCIPMessage(
-            MessageType.REQUEST,
-            abi.encode(GiftMessage({recipient: _recipient, amount: _amount})),
-            _payInLink
+            MessageType.REQUEST, abi.encode(GiftMessage({recipient: _recipient, amount: _amount})), _payInLink
         );
 
         // Get the fee required to send the message
@@ -335,9 +330,7 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @notice Handle incoming CCIP response messages
      * @param any2EvmMessage CCIP message
      */
-    function _ccipReceive(
-        Client.Any2EVMMessage memory any2EvmMessage
-    ) internal override nonReentrant {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant {
         // Decode message type
         (MessageType msgType, bytes memory data) = abi.decode(any2EvmMessage.data, (MessageType, bytes));
 
@@ -378,17 +371,11 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _payInLink Whether to pay in LINK
      * @return fee CCIP fee amount
      */
-    function getFee(
-        address _recipient,
-        uint256 _amount,
-        bool _payInLink
-    ) external view returns (uint256 fee) {
+    function getFee(address _recipient, uint256 _amount, bool _payInLink) external view returns (uint256 fee) {
         if (destinationChainSelector == 0) revert DestinationNotConfigured();
 
         Client.EVM2AnyMessage memory message = _buildCCIPMessage(
-            MessageType.REQUEST,
-            abi.encode(GiftMessage({recipient: _recipient, amount: _amount})),
-            _payInLink
+            MessageType.REQUEST, abi.encode(GiftMessage({recipient: _recipient, amount: _amount})), _payInLink
         );
 
         return ccipRouter.getFee(destinationChainSelector, message);
@@ -476,11 +463,11 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _payInLink Whether to pay in LINK
      * @return message CCIP EVM2Any message
      */
-    function _buildCCIPMessage(
-        MessageType _msgType,
-        bytes memory _data,
-        bool _payInLink
-    ) internal view returns (Client.EVM2AnyMessage memory) {
+    function _buildCCIPMessage(MessageType _msgType, bytes memory _data, bool _payInLink)
+        internal
+        view
+        returns (Client.EVM2AnyMessage memory)
+    {
         // Encode message type and data
         bytes memory messageData = abi.encode(_msgType, _data);
 
@@ -489,10 +476,7 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
             data: messageData,
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.GenericExtraArgsV2({
-                    gasLimit: gasLimit,
-                    allowOutOfOrderExecution: true
-                })
+                Client.GenericExtraArgsV2({gasLimit: gasLimit, allowOutOfOrderExecution: true})
             ),
             feeToken: _payInLink ? address(linkToken) : address(0)
         });

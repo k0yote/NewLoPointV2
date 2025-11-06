@@ -43,12 +43,7 @@ contract DeploySoneiumLayerZero is Script {
 
         // 2. Deploy NLPOAppAdapter
         console.log("\n2. Deploying NLPOAppAdapter...");
-        NLPOAppAdapter adapter = new NLPOAppAdapter(
-            nlpToken,
-            address(minterBurner),
-            lzEndpoint,
-            deployer
-        );
+        NLPOAppAdapter adapter = new NLPOAppAdapter(nlpToken, address(minterBurner), lzEndpoint, deployer);
         console.log("NLPOAppAdapter deployed at:", address(adapter));
 
         // 3. Authorize adapter in MinterBurner
@@ -74,7 +69,7 @@ contract DeployPolygonLayerZero is Script {
         address jpycToken = vm.envAddress("JPYC_POLYGON_ADDRESS");
         address lzEndpoint = vm.envAddress("POLYGON_LZ_ENDPOINT");
         address deployer = vm.addr(deployerPrivateKey);
-        uint256 vaultMinBalance = vm.envOr("VAULT_MIN_BALANCE", uint256(100000 * 10**18)); // 100k JPYC default
+        uint256 vaultMinBalance = vm.envOr("VAULT_MIN_BALANCE", uint256(100000 * 10 ** 18)); // 100k JPYC default
 
         console.log("Deploying LayerZero contracts on Polygon...");
         console.log("Deployer:", deployer);
@@ -90,12 +85,7 @@ contract DeployPolygonLayerZero is Script {
 
         // 2. Deploy NLPOAppJPYCReceiver
         console.log("\n2. Deploying NLPOAppJPYCReceiver...");
-        NLPOAppJPYCReceiver receiver = new NLPOAppJPYCReceiver(
-            jpycToken,
-            address(vault),
-            lzEndpoint,
-            deployer
-        );
+        NLPOAppJPYCReceiver receiver = new NLPOAppJPYCReceiver(jpycToken, address(vault), lzEndpoint, deployer);
         console.log("NLPOAppJPYCReceiver deployed at:", address(receiver));
 
         // 3. Grant EXCHANGE_ROLE to receiver

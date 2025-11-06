@@ -34,15 +34,9 @@ contract MockNLPToken {
         return true;
     }
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
         require(block.timestamp <= deadline, "Permit expired");
         allowance[owner][spender] = value;
     }
@@ -119,11 +113,7 @@ contract NLPCCIPAdapterTest is Test {
         // Deploy real contracts
         minterBurner = new NLPMinterBurner(address(nlpToken), owner);
         adapter = new NLPCCIPAdapter(
-            address(nlpToken),
-            address(minterBurner),
-            address(ccipRouter),
-            address(linkToken),
-            owner
+            address(nlpToken), address(minterBurner), address(ccipRouter), address(linkToken), owner
         );
 
         // Setup
@@ -212,11 +202,7 @@ contract NLPCCIPAdapterTest is Test {
     function testCannotSendWithoutDestination() public {
         // Deploy new adapter without destination configured
         NLPCCIPAdapter newAdapter = new NLPCCIPAdapter(
-            address(nlpToken),
-            address(minterBurner),
-            address(ccipRouter),
-            address(linkToken),
-            owner
+            address(nlpToken), address(minterBurner), address(ccipRouter), address(linkToken), owner
         );
 
         vm.startPrank(user);

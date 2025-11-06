@@ -47,8 +47,8 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
      * @notice Message type identifier
      */
     enum MessageType {
-        REQUEST,    // Chain A -> Chain B: Request JPYC exchange
-        RESPONSE    // Chain B -> Chain A: Result of JPYC exchange
+        REQUEST, // Chain A -> Chain B: Request JPYC exchange
+        RESPONSE // Chain B -> Chain A: Result of JPYC exchange
     }
 
     /**
@@ -140,12 +140,10 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
      * @param _endpoint Address of LayerZero Endpoint V2 on source chain
      * @param _owner Address that will have owner privileges
      */
-    constructor(
-        address _nlpToken,
-        address _minterBurner,
-        address _endpoint,
-        address _owner
-    ) OApp(_endpoint, _owner) Ownable(_owner) {
+    constructor(address _nlpToken, address _minterBurner, address _endpoint, address _owner)
+        OApp(_endpoint, _owner)
+        Ownable(_owner)
+    {
         if (_nlpToken == address(0)) revert InvalidAddress();
         if (_minterBurner == address(0)) revert InvalidAddress();
 
@@ -188,8 +186,9 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
 
         // Execute permit to approve this contract
         try nlpToken.permit(msg.sender, address(this), _amount, _deadline, _v, _r, _s) {
-            // Permit successful
-        } catch {
+        // Permit successful
+        }
+        catch {
             revert PermitFailed();
         }
 
@@ -201,10 +200,7 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
         lockedBalances[msg.sender] += _amount;
 
         // Build and send message
-        bytes memory message = abi.encode(
-            MessageType.REQUEST,
-            GiftMessage({recipient: _recipient, amount: _amount})
-        );
+        bytes memory message = abi.encode(MessageType.REQUEST, GiftMessage({recipient: _recipient, amount: _amount}));
 
         bytes memory options = _options.length > 0 ? _options : _buildOptions();
 
@@ -228,12 +224,12 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
      * @param _options Execution options (gas limit, etc.)
      * @return receipt Messaging receipt from LayerZero
      */
-    function send(
-        uint32 _dstEid,
-        address _recipient,
-        uint256 _amount,
-        bytes calldata _options
-    ) external payable nonReentrant returns (MessagingReceipt memory receipt) {
+    function send(uint32 _dstEid, address _recipient, uint256 _amount, bytes calldata _options)
+        external
+        payable
+        nonReentrant
+        returns (MessagingReceipt memory receipt)
+    {
         if (_amount == 0) revert InvalidAmount();
         if (_recipient == address(0)) revert InvalidAddress();
 
@@ -244,10 +240,7 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
         lockedBalances[msg.sender] += _amount;
 
         // Build and send message
-        bytes memory message = abi.encode(
-            MessageType.REQUEST,
-            GiftMessage({recipient: _recipient, amount: _amount})
-        );
+        bytes memory message = abi.encode(MessageType.REQUEST, GiftMessage({recipient: _recipient, amount: _amount}));
 
         bytes memory options = _options.length > 0 ? _options : _buildOptions();
 
@@ -324,17 +317,12 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
      * @param _payInLzToken Whether to pay in LZ token
      * @return fee Messaging fee
      */
-    function quoteSend(
-        uint32 _dstEid,
-        address _recipient,
-        uint256 _amount,
-        bytes calldata _options,
-        bool _payInLzToken
-    ) external view returns (MessagingFee memory fee) {
-        bytes memory message = abi.encode(
-            MessageType.REQUEST,
-            GiftMessage({recipient: _recipient, amount: _amount})
-        );
+    function quoteSend(uint32 _dstEid, address _recipient, uint256 _amount, bytes calldata _options, bool _payInLzToken)
+        external
+        view
+        returns (MessagingFee memory fee)
+    {
+        bytes memory message = abi.encode(MessageType.REQUEST, GiftMessage({recipient: _recipient, amount: _amount}));
 
         bytes memory options = _options.length > 0 ? _options : _buildOptions();
 

@@ -47,8 +47,8 @@ contract NLPCCIPJPYCReceiver is CCIPReceiver, Ownable, ReentrancyGuard {
      * @notice Message type identifier
      */
     enum MessageType {
-        REQUEST,    // Chain A -> Chain B: Request JPYC exchange
-        RESPONSE    // Chain B -> Chain A: Result of JPYC exchange
+        REQUEST, // Chain A -> Chain B: Request JPYC exchange
+        RESPONSE // Chain B -> Chain A: Result of JPYC exchange
     }
 
     /**
@@ -156,13 +156,10 @@ contract NLPCCIPJPYCReceiver is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _linkToken LINK token address for fees
      * @param _owner Address that will have owner privileges
      */
-    constructor(
-        address _jpycToken,
-        address _jpycVault,
-        address _ccipRouter,
-        address _linkToken,
-        address _owner
-    ) CCIPReceiver(_ccipRouter) Ownable(_owner) {
+    constructor(address _jpycToken, address _jpycVault, address _ccipRouter, address _linkToken, address _owner)
+        CCIPReceiver(_ccipRouter)
+        Ownable(_owner)
+    {
         if (_jpycToken == address(0)) revert InvalidAddress();
         if (_jpycVault == address(0)) revert InvalidAddress();
         if (_ccipRouter == address(0)) revert InvalidAddress();
@@ -182,9 +179,7 @@ contract NLPCCIPJPYCReceiver is CCIPReceiver, Ownable, ReentrancyGuard {
      * @notice Handle incoming CCIP request messages
      * @param any2EvmMessage CCIP message
      */
-    function _ccipReceive(
-        Client.Any2EVMMessage memory any2EvmMessage
-    ) internal override nonReentrant {
+    function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant {
         // Decode message type
         (MessageType msgType, bytes memory data) = abi.decode(any2EvmMessage.data, (MessageType, bytes));
 
@@ -234,20 +229,14 @@ contract NLPCCIPJPYCReceiver is CCIPReceiver, Ownable, ReentrancyGuard {
      * @param _amount NLP amount
      * @param _success Whether JPYC transfer succeeded
      */
-    function _sendResponse(
-        uint64 _srcChainSelector,
-        address _user,
-        uint256 _amount,
-        bool _success
-    ) internal {
+    function _sendResponse(uint64 _srcChainSelector, address _user, uint256 _amount, bool _success) internal {
         if (sourceChainSelector == 0 || sourceAdapter == address(0)) {
             revert SourceNotConfigured();
         }
 
         // Build response message
         bytes memory messageData = abi.encode(
-            MessageType.RESPONSE,
-            abi.encode(ResponseMessage({user: _user, amount: _amount, success: _success}))
+            MessageType.RESPONSE, abi.encode(ResponseMessage({user: _user, amount: _amount, success: _success}))
         );
 
         // Build CCIP message
@@ -256,10 +245,7 @@ contract NLPCCIPJPYCReceiver is CCIPReceiver, Ownable, ReentrancyGuard {
             data: messageData,
             tokenAmounts: new Client.EVMTokenAmount[](0),
             extraArgs: Client._argsToBytes(
-                Client.GenericExtraArgsV2({
-                    gasLimit: gasLimit,
-                    allowOutOfOrderExecution: true
-                })
+                Client.GenericExtraArgsV2({gasLimit: gasLimit, allowOutOfOrderExecution: true})
             ),
             feeToken: address(linkToken)
         });

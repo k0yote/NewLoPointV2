@@ -65,15 +65,9 @@ contract MockERC20 {
         return true;
     }
 
-    function permit(
-        address owner,
-        address spender,
-        uint256 value,
-        uint256 deadline,
-        uint8 v,
-        bytes32 r,
-        bytes32 s
-    ) external {
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+    {
         require(block.timestamp <= deadline);
         allowance[owner][spender] = value;
         nonces[owner]++;
@@ -106,17 +100,11 @@ contract MockLZEndpoint {
         delegates[msg.sender] = _delegate;
     }
 
-    function send(
-        MessagingParams calldata,
-        address
-    ) external payable returns (MessagingReceipt memory) {
+    function send(MessagingParams calldata, address) external payable returns (MessagingReceipt memory) {
         return MessagingReceipt({guid: bytes32(0), nonce: 0, fee: MessagingFee(msg.value, 0)});
     }
 
-    function quote(
-        MessagingParams calldata,
-        address
-    ) external pure returns (MessagingFee memory) {
+    function quote(MessagingParams calldata, address) external pure returns (MessagingFee memory) {
         return MessagingFee(0.01 ether, 0);
     }
 }
@@ -152,22 +140,12 @@ contract IntegrationTest is Test {
 
         // Deploy Soneium contracts
         minterBurner = new NLPMinterBurner(address(nlpToken), owner);
-        adapter = new NLPOAppAdapter(
-            address(nlpToken),
-            address(minterBurner),
-            address(lzEndpoint),
-            owner
-        );
+        adapter = new NLPOAppAdapter(address(nlpToken), address(minterBurner), address(lzEndpoint), owner);
         minterBurner.setOperator(address(adapter), true);
 
         // Deploy Polygon contracts
         vault = new JPYCVault(address(jpycToken), owner, 1000 ether);
-        receiver = new NLPOAppJPYCReceiver(
-            address(jpycToken),
-            address(vault),
-            address(lzEndpoint),
-            owner
-        );
+        receiver = new NLPOAppJPYCReceiver(address(jpycToken), address(vault), address(lzEndpoint), owner);
 
         // Grant EXCHANGE_ROLE to receiver
         bytes32 EXCHANGE_ROLE = keccak256("EXCHANGE_ROLE");
@@ -227,11 +205,8 @@ contract IntegrationTest is Test {
             abi.encode(NLPOAppAdapter.GiftMessage({recipient: recipient, amount: sendAmount}))
         );
 
-        Origin memory origin = Origin({
-            srcEid: SONEIUM_EID,
-            sender: bytes32(uint256(uint160(address(adapter)))),
-            nonce: 1
-        });
+        Origin memory origin =
+            Origin({srcEid: SONEIUM_EID, sender: bytes32(uint256(uint160(address(adapter)))), nonce: 1});
 
         // Simulate _lzReceive on receiver
         vm.prank(address(lzEndpoint));
@@ -246,18 +221,11 @@ contract IntegrationTest is Test {
         // Step 3: Simulate response back to adapter (success)
         bytes memory responseMessage = abi.encode(
             NLPOAppAdapter.MessageType.RESPONSE,
-            abi.encode(NLPOAppAdapter.ResponseMessage({
-                user: user,
-                amount: sendAmount,
-                success: true
-            }))
+            abi.encode(NLPOAppAdapter.ResponseMessage({user: user, amount: sendAmount, success: true}))
         );
 
-        Origin memory responseOrigin = Origin({
-            srcEid: POLYGON_EID,
-            sender: bytes32(uint256(uint160(address(receiver)))),
-            nonce: 1
-        });
+        Origin memory responseOrigin =
+            Origin({srcEid: POLYGON_EID, sender: bytes32(uint256(uint160(address(receiver)))), nonce: 1});
 
         // Simulate _lzReceive on adapter
         vm.prank(address(lzEndpoint));
@@ -292,18 +260,17 @@ contract IntegrationTest is Test {
         // Step 2: Simulate response back to adapter (failure)
         bytes memory responseMessage = abi.encode(
             NLPOAppAdapter.MessageType.RESPONSE,
-            abi.encode(NLPOAppAdapter.ResponseMessage({
-                user: user,
-                amount: sendAmount,
-                success: false // Failed!
-            }))
+            abi.encode(
+                NLPOAppAdapter.ResponseMessage({
+                    user: user,
+                    amount: sendAmount,
+                    success: false // Failed!
+                })
+            )
         );
 
-        Origin memory responseOrigin = Origin({
-            srcEid: POLYGON_EID,
-            sender: bytes32(uint256(uint160(address(receiver)))),
-            nonce: 1
-        });
+        Origin memory responseOrigin =
+            Origin({srcEid: POLYGON_EID, sender: bytes32(uint256(uint160(address(receiver)))), nonce: 1});
 
         uint256 userBalanceBefore = nlpToken.balanceOf(user);
 
