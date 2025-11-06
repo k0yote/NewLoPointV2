@@ -218,12 +218,15 @@ These are in third-party library code and don't affect security.
 ```
 ✅ NLPOAppAdapterTest:     6/6 tests passing (100%)
 ✅ NLPCCIPAdapterTest:     7/7 tests passing (100%)
-✅ IntegrationTest:        2/3 tests passing (67%)
+✅ IntegrationTest:        3/3 tests passing (100%)
 ───────────────────────────────────────────────────
-   Total:                  15/16 tests passing (93.75%)
+   Total:                  16/16 tests passing (100%) ✅
 ```
 
-**Note**: One integration test failure is unrelated to the security fixes and was pre-existing.
+**Integration Test Fixes** (2025-11-07):
+- Fixed `JPYCVault.withdraw()` to return `bool` as expected by interface
+- Modified `NLPOAppJPYCReceiver._sendResponse()` to properly handle LayerZero fees using contract balance
+- All integration tests now pass successfully
 
 ---
 
