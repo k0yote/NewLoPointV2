@@ -237,13 +237,8 @@ contract NLPOAppJPYCReceiver is OApp, ReentrancyGuard {
         bytes32 peer = peers[_srcEid];
         if (peer == bytes32(0)) revert NoPeer(_srcEid);
 
-        MessagingParams memory params = MessagingParams({
-            dstEid: _srcEid,
-            receiver: peer,
-            message: message,
-            options: options,
-            payInLzToken: false
-        });
+        MessagingParams memory params =
+            MessagingParams({dstEid: _srcEid, receiver: peer, message: message, options: options, payInLzToken: false});
 
         // Call endpoint.send with value from contract balance
         endpoint.send{value: fee.nativeFee}(params, payable(address(this)));
