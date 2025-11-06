@@ -1,0 +1,38 @@
+# Compiler files
+cache/
+out/
+
+# Ignores development broadcast logs
+!/broadcast
+/broadcast/*/31337/
+/broadcast/**/dry-run/
+
+# Docs
+docs/
+
+# Environment files - NEVER COMMIT THESE!
+.env
+.env.*
+!env.example
+
+# Node modules (if using npm/yarn)
+node_modules/
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test coverage
+coverage/
+coverage.json
+
+# Slither reports
+slither-report.json
+
+# Deployment artifacts (optional - remove if you want to commit these)
+# deployments/
+.mcp.json
