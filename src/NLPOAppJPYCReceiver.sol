@@ -2,6 +2,7 @@
 pragma solidity ^0.8.22;
 
 import {OApp, Origin, MessagingFee, MessagingReceipt} from "@layerzerolabs/oapp-evm/contracts/oapp/OApp.sol";
+import {MessagingParams} from "@layerzerolabs/oapp-evm/contracts/oapp/OAppSender.sol";
 import {OptionsBuilder} from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OptionsBuilder.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -230,8 +231,22 @@ contract NLPOAppJPYCReceiver is OApp, ReentrancyGuard {
         // Check contract has enough native tokens
         if (address(this).balance < fee.nativeFee) revert InsufficientFee();
 
-        // Send response
-        _lzSend(_srcEid, message, options, MessagingFee(fee.nativeFee, 0), payable(address(this)));
+        // Send response via low-level call to endpoint using contract's balance
+        // We can't use _lzSend because it checks msg.value, but we're calling internally
+        // Build MessagingParams for endpoint.send
+        bytes32 peer = peers[_srcEid];
+        if (peer == bytes32(0)) revert NoPeer(_srcEid);
+
+        MessagingParams memory params = MessagingParams({
+            dstEid: _srcEid,
+            receiver: peer,
+            message: message,
+            options: options,
+            payInLzToken: false
+        });
+
+        // Call endpoint.send with value from contract balance
+        endpoint.send{value: fee.nativeFee}(params, payable(address(this)));
 
         emit ResponseSent(_user, _amount, _success, _srcEid);
     }

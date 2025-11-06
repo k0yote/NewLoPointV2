@@ -43,6 +43,12 @@ contract MockERC20 {
         balanceOf[from] -= amount;
     }
 
+    function burnFrom(address from, uint256 amount) external returns (bool) {
+        require(balanceOf[from] >= amount, "Insufficient balance");
+        balanceOf[from] -= amount;
+        return true;
+    }
+
     function approve(address spender, uint256 amount) external returns (bool) {
         allowance[msg.sender][spender] = amount;
         return true;

@@ -184,7 +184,7 @@ contract JPYCVault is AccessControl, Pausable {
      * }
      * ```
      */
-    function withdraw(address recipient, uint256 amount) external onlyRole(EXCHANGE_ROLE) whenNotPaused {
+    function withdraw(address recipient, uint256 amount) external onlyRole(EXCHANGE_ROLE) whenNotPaused returns (bool) {
         if (recipient == address(0)) revert ZeroAddress();
         if (amount == 0) revert ZeroAmount();
 
@@ -208,6 +208,8 @@ contract JPYCVault is AccessControl, Pausable {
         if (newBalance < lowBalanceThreshold && lowBalanceThreshold > 0) {
             emit LowBalanceAlert(newBalance, lowBalanceThreshold);
         }
+
+        return true;
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
