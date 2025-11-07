@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2025-11-07
+
+### Fixed
+- Updated GitHub Actions workflow to use `actions/upload-artifact@v4` (previously v3)
+  - Resolves deprecation warning in automated release workflow
+  - Ensures continued functionality of release automation when tags are pushed
+
 ## [0.1.0] - 2025-11-07
 
 ### Added
@@ -96,5 +103,6 @@ This is the first beta release of the NewLo JPYC Cross-Chain Bridge. The system 
 
 ---
 
-[Unreleased]: https://github.com/k0yote/NewLoPointV2/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/k0yote/NewLoPointV2/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/k0yote/NewLoPointV2/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/k0yote/NewLoPointV2/releases/tag/v0.1.0
