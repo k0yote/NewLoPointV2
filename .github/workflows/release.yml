@@ -23,6 +23,14 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
+      - name: Initialize submodules dependencies
+        run: |
+          git submodule update --init --recursive
+          # Install solidity-bytes-utils for LayerZero-v2
+          if [ ! -d "lib/LayerZero-v2/lib/solidity-bytes-utils" ]; then
+            git clone https://github.com/GNSPS/solidity-bytes-utils.git lib/LayerZero-v2/lib/solidity-bytes-utils
+          fi
+
       - name: Run tests
         run: forge test
 
