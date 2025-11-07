@@ -26,6 +26,12 @@ This is a patch release that fixes the GitHub Actions automated release workflow
   - Ensures nested LayerZero-v2 dependencies are fully available during CI
   - Completes the fix for release workflow test failures
 
+**PR #10 - Remove Duplicate Release Creation**
+- **Fixed**: Commented out `Create Release` job in GitHub Actions workflow
+  - Prevents conflict between `scripts/create-release.sh` and GitHub Actions
+  - Resolves "already_exists" error when creating releases
+  - Centralizes release creation to the release script for simplicity
+
 ## 📝 Changes
 
 ### Infrastructure
@@ -33,6 +39,7 @@ This is a patch release that fixes the GitHub Actions automated release workflow
   - Updated `actions/upload-artifact` from v3 to v4
   - Added `submodules: recursive` to `actions/checkout@v4`
   - Added explicit `solidity-bytes-utils` installation step matching `test.yml`
+  - Commented out `Create Release` job to prevent duplicate release creation
 
 ## ✅ Testing
 
@@ -47,6 +54,7 @@ This is a patch release that fixes the GitHub Actions automated release workflow
   - [#4](https://github.com/k0yote/NewLoPointV2/pull/4) - Upload artifact fix
   - [#6](https://github.com/k0yote/NewLoPointV2/pull/6) - Git submodules initialization
   - [#8](https://github.com/k0yote/NewLoPointV2/pull/8) - Explicit solidity-bytes-utils installation
+  - [#10](https://github.com/k0yote/NewLoPointV2/pull/10) - Remove duplicate release creation
 - **Full Changelog**: https://github.com/k0yote/NewLoPointV2/compare/v0.1.0...v0.1.1
 
 ## ⚠️ Important Notes
