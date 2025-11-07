@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated GitHub Actions workflow to use `actions/upload-artifact@v4` (previously v3)
   - Resolves deprecation warning in automated release workflow
   - Ensures continued functionality of release automation when tags are pushed
+- Added `submodules: recursive` to GitHub Actions checkout step
+  - Fixes missing `solidity-bytes-utils` dependency for LayerZero-v2
+  - Resolves build error: `BytesLib.sol` not found during CI builds
 
 ## [0.1.0] - 2025-11-07
 
