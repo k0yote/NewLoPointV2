@@ -36,3 +36,4 @@ slither-report.json
 # Deployment artifacts (optional - remove if you want to commit these)
 # deployments/
 .mcp.json
+fiat/
