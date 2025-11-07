@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `submodules: recursive` to GitHub Actions checkout step
   - Fixes missing `solidity-bytes-utils` dependency for LayerZero-v2
   - Resolves build error: `BytesLib.sol` not found during CI builds
+- Added explicit `solidity-bytes-utils` installation step to release workflow
+  - Matches the approach used in `test.yml` for consistent dependency handling
+  - Ensures nested LayerZero-v2 dependencies are fully available during CI
+  - Completes the fix for release workflow test failures
 
 ## [0.1.0] - 2025-11-07
 

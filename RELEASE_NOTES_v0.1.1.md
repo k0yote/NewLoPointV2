@@ -20,12 +20,19 @@ This is a patch release that fixes the GitHub Actions automated release workflow
   - Resolves build error: `BytesLib.sol` not found during CI builds
   - Ensures all nested dependencies are properly initialized in GitHub Actions
 
+**PR #8 - Explicit Solidity-bytes-utils Installation**
+- **Fixed**: Added explicit installation step for `solidity-bytes-utils`
+  - Matches the approach used in `test.yml` for consistent dependency handling
+  - Ensures nested LayerZero-v2 dependencies are fully available during CI
+  - Completes the fix for release workflow test failures
+
 ## 📝 Changes
 
 ### Infrastructure
 - `.github/workflows/release.yml`
   - Updated `actions/upload-artifact` from v3 to v4
   - Added `submodules: recursive` to `actions/checkout@v4`
+  - Added explicit `solidity-bytes-utils` installation step matching `test.yml`
 
 ## ✅ Testing
 
@@ -38,7 +45,8 @@ This is a patch release that fixes the GitHub Actions automated release workflow
 - **Repository**: https://github.com/k0yote/NewLoPointV2
 - **Pull Requests**:
   - [#4](https://github.com/k0yote/NewLoPointV2/pull/4) - Upload artifact fix
-  - [#6](https://github.com/k0yote/NewLoPointV2/pull/6) - Git submodules fix
+  - [#6](https://github.com/k0yote/NewLoPointV2/pull/6) - Git submodules initialization
+  - [#8](https://github.com/k0yote/NewLoPointV2/pull/8) - Explicit solidity-bytes-utils installation
 - **Full Changelog**: https://github.com/k0yote/NewLoPointV2/compare/v0.1.0...v0.1.1
 
 ## ⚠️ Important Notes
