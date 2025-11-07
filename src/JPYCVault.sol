@@ -7,6 +7,32 @@ import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 /**
+ * @title IERC20Permit
+ * @notice Interface for ERC20 tokens with EIP-2612 permit functionality
+ */
+interface IERC20Permit is IERC20 {
+    /**
+     * @notice Update allowance with a signed permit
+     * @param owner Token owner's address (Authorizer)
+     * @param spender Spender's address
+     * @param value Amount of allowance
+     * @param deadline Expiration time, seconds since the epoch
+     * @param v v of the signature
+     * @param r r of the signature
+     * @param s s of the signature
+     */
+    function permit(address owner, address spender, uint256 value, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external;
+
+    /**
+     * @notice Returns the current nonce for an address for use in permit
+     * @param owner Address to query
+     * @return Current nonce
+     */
+    function nonces(address owner) external view returns (uint256);
+}
+
+/**
  * @title JPYCVault
  * @author NewLo Team
  * @notice Vault contract for managing JPYC liquidity for NLP exchanges
@@ -149,6 +175,67 @@ contract JPYCVault is AccessControl, Pausable {
      */
     function deposit(uint256 amount) external onlyRole(OPERATOR_ROLE) whenNotPaused {
         if (amount == 0) revert ZeroAmount();
+
+        // Transfer JPYC from operator to vault
+        jpyc.safeTransferFrom(msg.sender, address(this), amount);
+
+        // Update statistics
+        totalDeposited += amount;
+
+        uint256 newBalance = jpyc.balanceOf(address(this));
+
+        emit Deposited(msg.sender, amount, newBalance);
+    }
+
+    /**
+     * @notice Deposit JPYC into vault using EIP-2612 permit (gasless approval)
+     * @param amount Amount of JPYC to deposit
+     * @param deadline Permit signature deadline
+     * @param v v component of signature
+     * @param r r component of signature
+     * @param s s component of signature
+     *
+     * @dev Uses EIP-2612 permit for gasless approval in a single transaction
+     * @dev Only OPERATOR_ROLE can call this function
+     *
+     * Benefits:
+     * - Single transaction (no separate approve needed)
+     * - Better UX - operator signs permit off-chain
+     * - Saves one transaction and gas
+     *
+     * Usage:
+     * ```typescript
+     * // 1. Operator signs permit off-chain (no gas cost)
+     * const signature = await operator.signTypedData(domain, types, message);
+     * const { v, r, s } = ethers.Signature.from(signature);
+     *
+     * // 2. Call depositWithPermit (single transaction)
+     * await vault.depositWithPermit(amount, deadline, v, r, s);
+     * ```
+     *
+     * Security:
+     * - Permit signature includes deadline to prevent replay attacks
+     * - JPYC's nonce system prevents signature reuse
+     * - Same access control as regular deposit (OPERATOR_ROLE + whenNotPaused)
+     */
+    function depositWithPermit(uint256 amount, uint256 deadline, uint8 v, bytes32 r, bytes32 s)
+        external
+        onlyRole(OPERATOR_ROLE)
+        whenNotPaused
+    {
+        if (amount == 0) revert ZeroAmount();
+
+        // Execute permit to approve vault
+        IERC20Permit(address(jpyc))
+            .permit(
+                msg.sender, // owner
+                address(this), // spender (vault)
+                amount, // value
+                deadline, // deadline
+                v,
+                r,
+                s // signature
+            );
 
         // Transfer JPYC from operator to vault
         jpyc.safeTransferFrom(msg.sender, address(this), amount);
