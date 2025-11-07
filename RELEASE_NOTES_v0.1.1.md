@@ -6,16 +6,26 @@ This is a patch release that fixes the GitHub Actions automated release workflow
 
 ## 🐛 Bug Fixes
 
-### GitHub Actions Workflow (PR #4)
+### GitHub Actions Workflow
+
+**PR #4 - Upload Artifact Deprecation Fix**
 - **Fixed**: Updated `actions/upload-artifact` from v3 to v4
   - Resolves deprecation warning in release workflow
   - Ensures automated releases continue to function when version tags are pushed
   - No impact on contract functionality
 
+**PR #6 - Git Submodules Initialization**
+- **Fixed**: Added `submodules: recursive` to checkout step
+  - Fixes missing `solidity-bytes-utils` dependency for LayerZero-v2
+  - Resolves build error: `BytesLib.sol` not found during CI builds
+  - Ensures all nested dependencies are properly initialized in GitHub Actions
+
 ## 📝 Changes
 
 ### Infrastructure
-- `.github/workflows/release.yml` - Updated upload-artifact action to v4
+- `.github/workflows/release.yml`
+  - Updated `actions/upload-artifact` from v3 to v4
+  - Added `submodules: recursive` to `actions/checkout@v4`
 
 ## ✅ Testing
 
@@ -26,7 +36,9 @@ This is a patch release that fixes the GitHub Actions automated release workflow
 ## 🔗 Links
 
 - **Repository**: https://github.com/k0yote/NewLoPointV2
-- **Pull Request**: [#4](https://github.com/k0yote/NewLoPointV2/pull/4)
+- **Pull Requests**:
+  - [#4](https://github.com/k0yote/NewLoPointV2/pull/4) - Upload artifact fix
+  - [#6](https://github.com/k0yote/NewLoPointV2/pull/6) - Git submodules fix
 - **Full Changelog**: https://github.com/k0yote/NewLoPointV2/compare/v0.1.0...v0.1.1
 
 ## ⚠️ Important Notes
