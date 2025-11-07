@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Matches the approach used in `test.yml` for consistent dependency handling
   - Ensures nested LayerZero-v2 dependencies are fully available during CI
   - Completes the fix for release workflow test failures
+- Commented out `Create Release` job in GitHub Actions workflow
+  - Prevents conflict between `scripts/create-release.sh` and GitHub Actions
+  - Resolves "already_exists" error when creating releases
+  - Centralizes release creation to the release script
 
 ## [0.1.0] - 2025-11-07
 
