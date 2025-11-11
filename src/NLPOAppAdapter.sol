@@ -262,19 +262,26 @@ contract NLPOAppAdapter is OApp, ReentrancyGuard {
 
     /**
      * @notice Receive callback from destination chain
-     * @param _origin Origin information (source chain and sender)
-     * @param _guid Global unique identifier
+     * @dev _origin Origin information (source chain and sender)
+     * @dev _guid Global unique identifier
      * @param _message Encoded ResponseMessage
-     * @param _executor Executor address
-     * @param _extraData Extra data from executor
+     * @dev _executor Executor address
+     * @dev _extraData Extra data from executor
      */
     function _lzReceive(
-        Origin calldata _origin,
-        bytes32 _guid,
+        Origin calldata,
+        /*_origin*/
+        bytes32,
+        /*_guid*/
         bytes calldata _message,
-        address _executor,
-        bytes calldata _extraData
-    ) internal override nonReentrant {
+        address,
+        /*_executor*/
+        bytes calldata /*_extraData*/
+    )
+        internal
+        override
+        nonReentrant
+    {
         // Decode message type
         (MessageType msgType, bytes memory data) = abi.decode(_message, (MessageType, bytes));
 
