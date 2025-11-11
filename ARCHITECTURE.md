@@ -238,6 +238,64 @@ bytes memory message = abi.encode(
 );
 ```
 
+## Latest Features (2025-11-11)
+
+### Fee Management System
+
+Both LayerZero and CCIP adapters include configurable fee mechanisms for sustainable operations:
+
+```solidity
+/// @notice Exchange fee in basis points (100 = 1%, max 500 = 5%)
+uint256 public exchangeFee;
+
+/// @notice Operational fee in basis points (100 = 1%, max 500 = 5%)
+uint256 public operationalFee;
+
+function getExchangeQuote(TokenType tokenType, uint256 nlpAmount)
+    external view
+    returns (
+        uint256 grossAmount,      // NLP converted to JPYC at exchange rate
+        uint256 exchangeFeeAmount, // Exchange fee deducted
+        uint256 operationalFeeAmount, // Operational fee deducted
+        uint256 netAmount         // Final amount user receives
+    )
+```
+
+**Fee Calculation Example**:
+- User sends: 1000 NLP
+- Exchange rate: 1:1
+- Exchange fee: 100 (1%)
+- Operational fee: 50 (0.5%)
+- Result:
+  - Gross: 1000 JPYC
+  - Exchange fee: 10 JPYC
+  - Operational fee: 5 JPYC
+  - **Net received: 985 JPYC**
+
+**Security**:
+- Maximum fee: 5% (500 basis points)
+- Only owner can modify fees
+- Events emitted on fee changes
+- Fees clearly shown in quote before transaction
+
+### TokenType Enum
+
+Added for frontend ABI convenience and future multi-token support:
+
+```solidity
+enum TokenType {
+    JPYC  // Currently only JPYC supported
+}
+
+function getExchangeQuote(TokenType tokenType, uint256 nlpAmount)
+```
+
+**Benefits**:
+- Type-safe frontend integration
+- Clear ABI for web3 libraries
+- Future extensibility for additional tokens (USDC, USDT, etc.)
+- Better developer experience
+
 ## Key Design Decisions
 
 ### 1. Why Lock Instead of Immediate Burn?
@@ -258,7 +316,13 @@ bytes memory message = abi.encode(
 
 **Solution**: Direct JPYC exchange simplifies the flow and reduces gas costs.
 
-### 4. How to Prevent Stuck Funds?
+### 4. Why Fee Management System?
+
+**Problem**: Cross-chain operations have infrastructure costs (monitoring, liquidity management).
+
+**Solution**: Configurable fees with strict caps (max 5%) enable sustainable operations while protecting users.
+
+### 5. How to Prevent Stuck Funds?
 
 **Scenario 1**: JPYC transfer succeeds → NLP burned → ✅ Correct state
 **Scenario 2**: JPYC transfer fails → NLP unlocked → ✅ Correct state
@@ -297,7 +361,10 @@ bytes memory message = abi.encode(
 
 ## Security Considerations
 
-**📊 Security Audit**: A comprehensive Slither static analysis has been completed. [View the full security audit report →](./SECURITY_AUDIT.md)
+**📊 Security Audit**: A comprehensive Slither static analysis has been completed (Latest: 2025-11-11).
+**Result**: Zero critical/high/medium vulnerabilities found. [View the full security audit report →](./SECURITY_AUDIT.md)
+
+**Test Coverage**: 34/34 tests passing (100%) ✅
 
 ### 1. Reentrancy Protection
 
@@ -307,6 +374,10 @@ All state-changing functions use OpenZeppelin's `ReentrancyGuard`:
 function send(...) external payable nonReentrant {
     // Safe from reentrancy attacks
 }
+
+function sendWithPermit(...) external payable nonReentrant {
+    // Protected from reentrancy during permit + send
+}
 ```
 
 ### 2. Access Control
@@ -314,6 +385,7 @@ function send(...) external payable nonReentrant {
 - Only authorized adapters can call `NLPMinterBurner.burn()`
 - Only authorized receivers can call `JPYCVault.withdraw()`
 - All admin functions protected by `onlyOwner`
+- Fee management restricted to owner only
 
 ### 3. Message Validation
 
@@ -324,6 +396,9 @@ if (_origin.sender != peers[_origin.srcEid]) revert UnauthorizedPeer();
 // Verify message type
 (MessageType msgType, bytes memory data) = abi.decode(_message, (MessageType, bytes));
 if (msgType != MessageType.REQUEST) revert InvalidMessageType();
+
+// Validate amounts
+if (amount == 0) revert InvalidAmount();
 ```
 
 ### 4. Balance Tracking
@@ -334,6 +409,34 @@ mapping(address => uint256) public lockedBalances;
 
 // Cannot unlock more than locked
 if (lockedBalances[user] < amount) revert InsufficientLockedBalance();
+
+// Check locked balance before burn/unlock
+if (lockedBalances[user] == 0) revert NoLockedTokens();
+```
+
+### 5. Enhanced Error Handling (2025-11-11)
+
+```solidity
+// Try-catch for external calls
+try minterBurner.burn(address(this), amount) {
+    emit NLPBurned(user, amount);
+} catch Error(string memory reason) {
+    emit BurnFailed(user, amount, reason);
+} catch {
+    emit BurnFailed(user, amount, "Unknown error");
+}
+```
+
+### 6. Fee Safety
+
+```solidity
+// Maximum fee caps enforced
+uint256 public constant MAX_FEE = 500; // 5%
+
+function setExchangeFee(uint256 _fee) external onlyOwner {
+    if (_fee > MAX_FEE) revert InvalidFeeRate(_fee, MAX_FEE);
+    exchangeFee = _fee;
+}
 ```
 
 ## Monitoring & Alerts

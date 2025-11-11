@@ -74,6 +74,13 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
         bool success;
     }
 
+    /**
+     * @notice Supported token types for exchange
+     */
+    enum TokenType {
+        JPYC
+    }
+
     /* ═══════════════════════════════════════════════════════════════════════
                                    EVENTS
     ═══════════════════════════════════════════════════════════════════════ */
@@ -89,6 +96,12 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
 
     /// @notice Emitted when exchange rate is updated
     event ExchangeRateUpdated(uint256 oldRate, uint256 newRate);
+
+    /// @notice Emitted when exchange fee is updated
+    event ExchangeFeeUpdated(uint256 oldFee, uint256 newFee);
+
+    /// @notice Emitted when operational fee is updated
+    event OperationalFeeUpdated(uint256 oldFee, uint256 newFee);
 
     /// @notice Emitted when gas limit is updated
     event GasLimitUpdated(uint256 oldLimit, uint256 newLimit);
@@ -106,6 +119,9 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
     error NotEnoughBalance(uint256 currentBalance, uint256 calculatedFees);
     error DestinationNotConfigured();
     error NoLockedTokens();
+    error InvalidFeeRate(uint256 fee, uint256 maxFee);
+    error BurnFailed(address user, uint256 amount);
+    error TransferFailed();
 
     /* ═══════════════════════════════════════════════════════════════════════
                                IMMUTABLE STATE
@@ -142,6 +158,15 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
 
     /// @notice Rate denominator for precision
     uint256 public constant RATE_DENOMINATOR = 10000;
+
+    /// @notice Exchange fee in basis points (100 = 1%)
+    uint256 public exchangeFee = 0;
+
+    /// @notice Operational fee in basis points (100 = 1%)
+    uint256 public operationalFee = 0;
+
+    /// @notice Maximum allowed fee (5%)
+    uint256 public constant MAX_FEE = 500;
 
     /// @notice Gas limit for destination ccipReceive
     uint256 public gasLimit = 200_000;
@@ -329,6 +354,7 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
     /**
      * @notice Handle incoming CCIP response messages
      * @param any2EvmMessage CCIP message
+     * @dev Follows CEI (Checks-Effects-Interactions) pattern for security
      */
     function _ccipReceive(Client.Any2EVMMessage memory any2EvmMessage) internal override nonReentrant {
         // Decode message type
@@ -340,24 +366,57 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
         // Decode response
         ResponseMessage memory response = abi.decode(data, (ResponseMessage));
 
+        // ============================================
+        // CHECKS: Validate response data
+        // ============================================
         if (response.amount == 0) revert InvalidAmount();
         if (response.user == address(0)) revert InvalidAddress();
-
-        // Check user has locked tokens
         if (lockedBalances[response.user] < response.amount) revert NoLockedTokens();
 
-        // Reduce locked balance
+        // ============================================
+        // EFFECTS: Update state before interactions
+        // ============================================
+        // Reduce locked balance (CEI pattern)
         lockedBalances[response.user] -= response.amount;
 
+        // ============================================
+        // INTERACTIONS: External calls
+        // ============================================
         if (response.success) {
             // JPYC transfer succeeded -> Burn NLP
-            minterBurner.burn(address(this), response.amount);
-            emit NLPBurned(response.user, response.amount);
+            _burnNLP(response.user, response.amount);
         } else {
             // JPYC transfer failed -> Unlock NLP back to user
-            IERC20(address(nlpToken)).safeTransfer(response.user, response.amount);
-            emit NLPUnlocked(response.user, response.amount);
+            _unlockNLP(response.user, response.amount);
         }
+    }
+
+    /**
+     * @notice Burn NLP tokens (internal helper following reference code pattern)
+     * @param user User address for event emission
+     * @param amount Amount of NLP to burn from this contract
+     * @dev Uses try-catch pattern from reference code for robust error handling
+     */
+    function _burnNLP(address user, uint256 amount) internal {
+        try minterBurner.burn(address(this), amount) {
+            // Burn successful
+            emit NLPBurned(user, amount);
+        } catch {
+            // Burn failed - this should never happen in normal operation
+            revert BurnFailed(user, amount);
+        }
+    }
+
+    /**
+     * @notice Unlock NLP tokens back to user (internal helper)
+     * @param user User address to receive unlocked tokens
+     * @param amount Amount of NLP to unlock
+     * @dev Uses SafeERC20 for secure transfer
+     */
+    function _unlockNLP(address user, uint256 amount) internal {
+        // SafeERC20.safeTransfer already handles revert on failure
+        IERC20(address(nlpToken)).safeTransfer(user, amount);
+        emit NLPUnlocked(user, amount);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -382,14 +441,36 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
     }
 
     /**
-     * @notice Get exchange quote for NLP to JPYC
+     * @notice Get exchange quote for NLP to JPYC with fees
+     * @dev tokenType parameter is reserved for future use (currently only JPYC supported)
      * @param nlpAmount Amount of NLP tokens
-     * @return jpycAmount Estimated JPYC amount user would receive
+     * @return grossAmount Gross JPYC amount before fees
+     * @return exchangeFeeAmount Exchange fee in JPYC
+     * @return operationalFeeAmount Operational fee in JPYC
+     * @return netAmount Net JPYC amount after fees
      */
-    function getExchangeQuote(uint256 nlpAmount) external view returns (uint256 jpycAmount) {
-        if (nlpAmount == 0) return 0;
-        jpycAmount = (nlpAmount * nlpToJpycRate) / RATE_DENOMINATOR;
-        return jpycAmount;
+    function getExchangeQuote(
+        TokenType,
+        /*tokenType*/
+        uint256 nlpAmount
+    )
+        external
+        view
+        returns (uint256 grossAmount, uint256 exchangeFeeAmount, uint256 operationalFeeAmount, uint256 netAmount)
+    {
+        if (nlpAmount == 0) return (0, 0, 0, 0);
+
+        // Calculate gross JPYC amount
+        grossAmount = (nlpAmount * nlpToJpycRate) / RATE_DENOMINATOR;
+
+        // Calculate fees in JPYC
+        exchangeFeeAmount = (grossAmount * exchangeFee) / 10000;
+        operationalFeeAmount = (grossAmount * operationalFee) / 10000;
+
+        // Calculate net amount after fees
+        netAmount = grossAmount - exchangeFeeAmount - operationalFeeAmount;
+
+        return (grossAmount, exchangeFeeAmount, operationalFeeAmount, netAmount);
     }
 
     /* ═══════════════════════════════════════════════════════════════════════
@@ -419,6 +500,28 @@ contract NLPCCIPAdapter is CCIPReceiver, Ownable, ReentrancyGuard {
         uint256 oldRate = nlpToJpycRate;
         nlpToJpycRate = _newRate;
         emit ExchangeRateUpdated(oldRate, _newRate);
+    }
+
+    /**
+     * @notice Set exchange fee rate
+     * @param _newFee New exchange fee in basis points (100 = 1%)
+     */
+    function setExchangeFee(uint256 _newFee) external onlyOwner {
+        if (_newFee > MAX_FEE) revert InvalidFeeRate(_newFee, MAX_FEE);
+        uint256 oldFee = exchangeFee;
+        exchangeFee = _newFee;
+        emit ExchangeFeeUpdated(oldFee, _newFee);
+    }
+
+    /**
+     * @notice Set operational fee rate
+     * @param _newFee New operational fee in basis points (100 = 1%)
+     */
+    function setOperationalFee(uint256 _newFee) external onlyOwner {
+        if (_newFee > MAX_FEE) revert InvalidFeeRate(_newFee, MAX_FEE);
+        uint256 oldFee = operationalFee;
+        operationalFee = _newFee;
+        emit OperationalFeeUpdated(oldFee, _newFee);
     }
 
     /**
